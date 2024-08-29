@@ -1,0 +1,58 @@
+[0;31mSignature:[0m      
+[0maudio_process[0m[0;34m([0m[0;34m[0m
+[0;34m[0m    [0mimages[0m[0;34m=[0m[0;32mNone[0m[0;34m,[0m[0;34m[0m
+[0;34m[0m    [0mtext[0m[0;34m=[0m[0;32mNone[0m[0;34m,[0m[0;34m[0m
+[0;34m[0m    [0mcontext_length[0m[0;34m=[0m[0;36m77[0m[0;34m,[0m[0;34m[0m
+[0;34m[0m    [0mreturn_tensors[0m[0;34m=[0m[0;32mNone[0m[0;34m,[0m[0;34m[0m
+[0;34m[0m    [0;34m**[0m[0mkwargs[0m[0;34m,[0m[0;34m[0m
+[0;34m[0m[0;34m)[0m[0;34m[0m[0;34m[0m[0m
+[0;31mType:[0m            LanguageBindAudioProcessor
+[0;31mString form:[0m     LanguageBindAudioProcessor:
+[0;31mFile:[0m            ~/AudioTinyLLaVA/LanguageBind/languagebind/audio/processing_audio.py
+[0;31mSource:[0m         
+[0;32mclass[0m [0mLanguageBindAudioProcessor[0m[0;34m([0m[0mProcessorMixin[0m[0;34m)[0m[0;34m:[0m[0;34m[0m
+[0;34m[0m    [0mattributes[0m [0;34m=[0m [0;34m[[0m[0;34m][0m[0;34m[0m
+[0;34m[0m    [0mtokenizer_class[0m [0;34m=[0m [0;34m([0m[0;34m"LanguageBindAudioTokenizer"[0m[0;34m)[0m[0;34m[0m
+[0;34m[0m[0;34m[0m
+[0;34m[0m    [0;32mdef[0m [0m__init__[0m[0;34m([0m[0mself[0m[0;34m,[0m [0mconfig[0m[0;34m,[0m [0mtokenizer[0m[0;34m=[0m[0;32mNone[0m[0;34m,[0m [0;34m**[0m[0mkwargs[0m[0;34m)[0m[0;34m:[0m[0;34m[0m
+[0;34m[0m        [0msuper[0m[0;34m([0m[0;34m)[0m[0;34m.[0m[0m__init__[0m[0;34m([0m[0;34m**[0m[0mkwargs[0m[0;34m)[0m[0;34m[0m
+[0;34m[0m        [0mself[0m[0;34m.[0m[0mconfig[0m [0;34m=[0m [0mconfig[0m[0;34m[0m
+[0;34m[0m        [0mself[0m[0;34m.[0m[0mtransform[0m [0;34m=[0m [0mget_audio_transform[0m[0;34m([0m[0mconfig[0m[0;34m)[0m[0;34m[0m
+[0;34m[0m        [0mself[0m[0;34m.[0m[0mimage_processor[0m [0;34m=[0m [0mload_and_transform_audio[0m[0;34m[0m
+[0;34m[0m        [0mself[0m[0;34m.[0m[0mtokenizer[0m [0;34m=[0m [0mtokenizer[0m[0;34m[0m
+[0;34m[0m[0;34m[0m
+[0;34m[0m    [0;32mdef[0m [0m__call__[0m[0;34m([0m[0mself[0m[0;34m,[0m [0mimages[0m[0;34m=[0m[0;32mNone[0m[0;34m,[0m [0mtext[0m[0;34m=[0m[0;32mNone[0m[0;34m,[0m [0mcontext_length[0m[0;34m=[0m[0;36m77[0m[0;34m,[0m [0mreturn_tensors[0m[0;34m=[0m[0;32mNone[0m[0;34m,[0m [0;34m**[0m[0mkwargs[0m[0;34m)[0m[0;34m:[0m[0;34m[0m
+[0;34m[0m        [0;32mif[0m [0mtext[0m [0;32mis[0m [0;32mNone[0m [0;32mand[0m [0mimages[0m [0;32mis[0m [0;32mNone[0m[0;34m:[0m[0;34m[0m
+[0;34m[0m            [0;32mraise[0m [0mValueError[0m[0;34m([0m[0;34m"You have to specify either text or images. Both cannot be none."[0m[0;34m)[0m[0;34m[0m
+[0;34m[0m[0;34m[0m
+[0;34m[0m        [0;32mif[0m [0mtext[0m [0;32mis[0m [0;32mnot[0m [0;32mNone[0m[0;34m:[0m[0;34m[0m
+[0;34m[0m            [0mencoding[0m [0;34m=[0m [0mself[0m[0;34m.[0m[0mtokenizer[0m[0;34m([0m[0mtext[0m[0;34m,[0m [0mmax_length[0m[0;34m=[0m[0mcontext_length[0m[0;34m,[0m [0mpadding[0m[0;34m=[0m[0;34m'max_length'[0m[0;34m,[0m[0;34m[0m
+[0;34m[0m                                      [0mtruncation[0m[0;34m=[0m[0;32mTrue[0m[0;34m,[0m [0mreturn_tensors[0m[0;34m=[0m[0mreturn_tensors[0m[0;34m,[0m [0;34m**[0m[0mkwargs[0m[0;34m)[0m[0;34m[0m
+[0;34m[0m[0;34m[0m
+[0;34m[0m        [0;32mif[0m [0mimages[0m [0;32mis[0m [0;32mnot[0m [0;32mNone[0m[0;34m:[0m[0;34m[0m
+[0;34m[0m            [0mimages[0m [0;34m=[0m [0mmake_list_of_images[0m[0;34m([0m[0mimages[0m[0;34m)[0m[0;34m[0m
+[0;34m[0m            [0mimage_features[0m [0;34m=[0m [0;34m[[0m[0mself[0m[0;34m.[0m[0mimage_processor[0m[0;34m([0m[0mimage[0m[0;34m,[0m [0mself[0m[0;34m.[0m[0mtransform[0m[0;34m)[0m [0;32mfor[0m [0mimage[0m [0;32min[0m [0mimages[0m[0;34m][0m[0;34m[0m
+[0;34m[0m            [0mimage_features[0m [0;34m=[0m [0mtorch[0m[0;34m.[0m[0mstack[0m[0;34m([0m[0mimage_features[0m[0;34m)[0m[0;34m[0m
+[0;34m[0m[0;34m[0m
+[0;34m[0m        [0;32mif[0m [0mtext[0m [0;32mis[0m [0;32mnot[0m [0;32mNone[0m [0;32mand[0m [0mimages[0m [0;32mis[0m [0;32mnot[0m [0;32mNone[0m[0;34m:[0m[0;34m[0m
+[0;34m[0m            [0mencoding[0m[0;34m[[0m[0;34m"pixel_values"[0m[0;34m][0m [0;34m=[0m [0mimage_features[0m[0;34m[0m
+[0;34m[0m            [0;32mreturn[0m [0mencoding[0m[0;34m[0m
+[0;34m[0m        [0;32melif[0m [0mtext[0m [0;32mis[0m [0;32mnot[0m [0;32mNone[0m[0;34m:[0m[0;34m[0m
+[0;34m[0m            [0;32mreturn[0m [0mencoding[0m[0;34m[0m
+[0;34m[0m        [0;32melse[0m[0;34m:[0m[0;34m[0m
+[0;34m[0m            [0;32mreturn[0m [0;34m{[0m[0;34m"pixel_values"[0m[0;34m:[0m [0mimage_features[0m[0;34m}[0m[0;34m[0m
+[0;34m[0m[0;34m[0m
+[0;34m[0m    [0;32mdef[0m [0mbatch_decode[0m[0;34m([0m[0mself[0m[0;34m,[0m [0mskip_special_tokens[0m[0;34m=[0m[0;32mTrue[0m[0;34m,[0m [0;34m*[0m[0margs[0m[0;34m,[0m [0;34m**[0m[0mkwargs[0m[0;34m)[0m[0;34m:[0m[0;34m[0m
+[0;34m[0m        [0;34m"""[0m
+[0;34m        This method forwards all its arguments to CLIPTokenizerFast's [`~PreTrainedTokenizer.batch_decode`]. Please[0m
+[0;34m        refer to the docstring of this method for more information.[0m
+[0;34m        """[0m[0;34m[0m
+[0;34m[0m        [0;32mreturn[0m [0mself[0m[0;34m.[0m[0mtokenizer[0m[0;34m.[0m[0mbatch_decode[0m[0;34m([0m[0;34m*[0m[0margs[0m[0;34m,[0m [0mskip_special_tokens[0m[0;34m=[0m[0mskip_special_tokens[0m[0;34m,[0m [0;34m**[0m[0mkwargs[0m[0;34m)[0m[0;34m[0m
+[0;34m[0m[0;34m[0m
+[0;34m[0m    [0;32mdef[0m [0mdecode[0m[0;34m([0m[0mself[0m[0;34m,[0m [0mskip_special_tokens[0m[0;34m=[0m[0;32mTrue[0m[0;34m,[0m [0;34m*[0m[0margs[0m[0;34m,[0m [0;34m**[0m[0mkwargs[0m[0;34m)[0m[0;34m:[0m[0;34m[0m
+[0;34m[0m        [0;34m"""[0m
+[0;34m        This method forwards all its arguments to CLIPTokenizerFast's [`~PreTrainedTokenizer.decode`]. Please refer to[0m
+[0;34m        the docstring of this method for more information.[0m
+[0;34m        """[0m[0;34m[0m
+[0;34m[0m        [0;32mreturn[0m [0mself[0m[0;34m.[0m[0mtokenizer[0m[0;34m.[0m[0mdecode[0m[0;34m([0m[0;34m*[0m[0margs[0m[0;34m,[0m [0mskip_special_tokens[0m[0;34m=[0m[0mskip_special_tokens[0m[0;34m,[0m [0;34m**[0m[0mkwargs[0m[0;34m)[0m[0;34m[0m[0;34m[0m[0m
+[0;31mClass docstring:[0m This is a mixin used to provide saving/loading functionality for all processor classes.

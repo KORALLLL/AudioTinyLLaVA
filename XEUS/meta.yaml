@@ -1,0 +1,8 @@
+espnet: '202304'
+files:
+  s2t_model_file: model/xeus_checkpoint.pth
+python: 3.10.10 (main, Mar 21 2023, 18:45:11) [GCC 11.2.0]
+timestamp: 1690664683.078748
+torch: 1.13.1
+yaml_files:
+  s2t_train_config: model/config.yaml

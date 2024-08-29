@@ -1,0 +1,49 @@
+# DATA_PATH="/home/ai/data/llava/dataset/text_files/llava_v1_5_mix665k.json"
+DATA_PATH="/home/user27/LibriSpeech/train.json"
+IMAGE_PATH="/home/ai/data/llava/dataset"
+MODEL_MAX_LENGTH=3072
+# OUTPUT_DIR="/mnt/data/sata/yinghu/checkpoints/llava_factory/custom-finetune-TinyLLaVA-Phi-2-SigLIP-3.1B-lora"
+OUTPUT_DIR="/home/user27/outputs/temp"
+
+# python -m tinyllava/train/custom_finetune.py \
+deepspeed --include localhost:0,1,2,3 --master_port 29501 tinyllava/eval/custom_eval.py \
+    --deepspeed ./scripts/zero2.json \
+    --data_path  $DATA_PATH \
+    --image_folder $IMAGE_PATH \
+    --is_multimodal True \
+    --conv_version phi \
+    --mm_vision_select_layer -2 \
+    --image_aspect_ratio square \
+    --fp16 True \
+    --training_recipe common \
+    --tune_type_llm frozen \
+    --tune_type_connector frozen \
+    --tune_type_vision_tower frozen \
+    --lora_r 128 \
+    --lora_alpha 256 \
+    --group_by_modality_length False \
+    --pretrained_model_path "/home/user27/outputs" \
+    --num_train_epochs 1 \
+    --per_device_train_batch_size 4 \
+    --per_device_eval_batch_size 4 \
+    --gradient_accumulation_steps 8 \
+    --evaluation_strategy "no" \
+    --save_strategy "no" \
+    --save_steps 9999999999999 \
+    --save_total_limit 0 \
+    --learning_rate 1e-4 \
+    --weight_decay 0. \
+    --warmup_ratio 0.03 \
+    --lr_scheduler_type "cosine" \
+    --logging_steps 1 \
+    --tf32 False \
+    --model_max_length $MODEL_MAX_LENGTH \
+    --gradient_checkpointing True \
+    --dataloader_num_workers 8 \
+    --lazy_preprocess True \
+    --report_to wandb \
+    --tokenizer_use_fast False \
+    --run_name custom-finetune-TinyLLaVA-Phi-2-SigLIP-3.1B-lora \
+    --output_dir $OUTPUT_DIR \
+    # --tune_vision_tower_from_layer 0 \
+    
