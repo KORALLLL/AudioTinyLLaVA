@@ -49,4 +49,4 @@ class MoFMLPConnector(Connector):
     def __init__(self, config):
         super().__init__()
 
-        self._connector = MoFMLP(config)
+        self._connector = MoFMLP(config).half()

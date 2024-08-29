@@ -61,3 +61,8 @@ checkpoints/*
 scripts/.ipynb_checkpoints/*
 test/*
 output/*
+
+*.pth
+*.safetensors
+test.json
+dev.json

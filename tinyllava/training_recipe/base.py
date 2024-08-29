@@ -81,6 +81,7 @@ class BaseTrainingRecipe:
         if tune_type == 'full':
             for p in model.connector.parameters():
                 p.requires_grad = True
+            print("\n\nCONNECTOR UNFREEZED\n\n")
         elif tune_type == 'frozen':
             for p in model.connector.parameters():
                 p.requires_grad = False

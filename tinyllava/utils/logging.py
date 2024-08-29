@@ -47,10 +47,11 @@ def log(*args):
 
         
 def log_trainable_params(model):
-    total_params = sum(p.numel() for p in model.parameters())
-    total_trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    log(f'Total Parameters: {total_params}, Total Trainable Parameters: {total_trainable_params}')
-    log(f'Trainable Parameters:')
-    for name, param in model.named_parameters():
-        if param.requires_grad:
-            print_rank0(f"{name}: {param.numel()} parameters")
+    # total_params = sum(p.numel() for p in model.parameters())
+    # total_trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    # log(f'Total Parameters: {total_params}, Total Trainable Parameters: {total_trainable_params}')
+    # log(f'Trainable Parameters:')
+    # for name, param in model.named_parameters():
+    #     if param.requires_grad:
+    #         print_rank0(f"{name}: {param.numel()} parameters")
+    print("\n\n         All code in this function is commente\n\n")

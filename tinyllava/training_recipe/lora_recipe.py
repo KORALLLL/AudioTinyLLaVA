@@ -43,7 +43,7 @@ class LoRATrainingRecipe(BaseTrainingRecipe):
                 model.to(torch.bfloat16)
             if self.training_arguments.fp16:
                 model.to(torch.float16)
-        log("Adding LoRA adapters...")
+        print("\n\nAdding LoRA adapters...\n\n")
         model = get_peft_model(model, lora_config)  
         return model
         

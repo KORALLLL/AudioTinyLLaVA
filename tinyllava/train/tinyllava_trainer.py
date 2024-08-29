@@ -225,6 +225,14 @@ class LLaVATrainer(Trainer):
                 logger.info(f"skipped: {skipped/2**20}M params")
 
         return self.optimizer
+    
+    def _inner_training_loop(
+        self, batch_size=None, args=None, resume_from_checkpoint=None, trial=None, ignore_keys_for_eval=None
+    ):
+        print("\n\n       start inner training loop\n\n")
+        super()._inner_training_loop(
+            batch_size=batch_size, args=args, resume_from_checkpoint=resume_from_checkpoint, trial=trial, ignore_keys_for_eval=ignore_keys_for_eval
+        )
 
 
 

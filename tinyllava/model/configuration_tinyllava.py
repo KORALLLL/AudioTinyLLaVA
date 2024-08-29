@@ -23,7 +23,7 @@ class TinyLlavaConfig(PretrainedConfig):
         tokenizer_padding_side = 'right',
         tokenizer_model_max_length = 2048,
         vision_config = None,
-        vision_hidden_size = None,
+        vision_hidden_size = 768,
         vision_feature_layer = -2,
         vision_feature_select_strategy = 'patch',
         image_aspect_ratio = 'square',
@@ -41,6 +41,7 @@ class TinyLlavaConfig(PretrainedConfig):
         **kwargs
 
     ):
+        self.vision_hidden_size = vision_hidden_size  
         self.llm_model_name_or_path = llm_model_name_or_path
         self.tokenizer_name_or_path = tokenizer_name_or_path or self.llm_model_name_or_path
         self.vision_model_name_or_path = vision_model_name_or_path
@@ -67,7 +68,7 @@ class TinyLlavaConfig(PretrainedConfig):
         self.cache_dir = cache_dir
         self.tokenizer_use_fast = tokenizer_use_fast
         self._load_text_config(text_config)
-        self._load_vision_config(vision_config)
+        # self._load_vision_config(vision_config)
             
         super().__init__(**kwargs)
     
@@ -90,7 +91,7 @@ class TinyLlavaConfig(PretrainedConfig):
         self.tokenizer_padding_side = getattr(config, 'tokenizer_padding_side', 'right')
         
         self._load_text_config()
-        self._load_vision_config()
+        # self._load_vision_config()
       
     
     def _load_text_config(self, text_config=None):
@@ -108,26 +109,29 @@ class TinyLlavaConfig(PretrainedConfig):
     
     
     def _load_vision_config(self, vision_config=None):
+        print("skip load vision config. hello from mtuci @korallllll")
         if self.vision_model_name_or_path is None or self.vision_model_name_or_path == '':
-            self.vision_config = CONFIG_MAPPING['clip_vision_model'](
-                intermediate_size=4096,
-                hidden_size=1024,
-                patch_size=14,
-                image_size=336,
-                num_hidden_layers=24,
-                num_attention_heads=16,
-                vocab_size=32000,
-                projection_dim=768,
-            )
+            raise RuntimeError("VISION CONFIG FIX")
+            # self.vision_config = CONFIG_MAPPING['clip_vision_model'](
+            #     intermediate_size=4096,
+            #     hidden_size=1024,
+            #     patch_size=14,
+            #     image_size=336,
+            #     num_hidden_layers=24,
+            #     num_attention_heads=16,
+            #     vocab_size=32000,
+            #     projection_dim=768,
+            # )
             
         else:
-            self.vision_config = AutoConfig.from_pretrained(self.vision_model_name_or_path.split(':')[-1])
-            self.vision_config = getattr(self.vision_config, 'vision_config', self.vision_config)
-            if vision_config is not None:
-                self.vision_config = self.vision_config.from_dict(vision_config)
+            raise RuntimeError("VISION CONFIG FIX")
+            # self.vision_config = AutoConfig.from_pretrained(self.vision_model_name_or_path.split(':')[-1])
+            # self.vision_config = getattr(self.vision_config, 'vision_config', self.vision_config)
+            # if vision_config is not None:
+                # self.vision_config = self.vision_config.from_dict(vision_config)
                 
-        self.vision_config.model_name_or_path = self.vision_model_name_or_path.split(':')[-1]
-        self.vision_config.model_name_or_path2 = self.vision_model_name_or_path2.split(':')[-1]
-        self.vision_hidden_size = getattr(self.vision_config, 'hidden_size',  None)  
+        # self.vision_config.model_name_or_path = self.vision_model_name_or_path.split(':')[-1]
+        # self.vision_config.model_name_or_path2 = self.vision_model_name_or_path2.split(':')[-1]
+        # self.vision_hidden_size = getattr(self.vision_config, 'hidden_size',  None)  
         
-
+        

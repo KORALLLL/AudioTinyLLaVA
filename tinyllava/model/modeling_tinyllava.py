@@ -59,9 +59,19 @@ class TinyLlavaForConditionalGeneration(TinyLlavaPreTrainedModel):
     def __init__(self, config: TinyLlavaConfig):
         
         super().__init__(config)
+        # if not hasattr(config.text_config, "embd_pdrop"):
+        #     config.text_config.embd_pdrop = 0.1
+        
+        # if not hasattr(config.text_config, "num_hidden_layers"):
+        #     config.text_config.num_hidden_layers = 32
+        #     # config.text_config.test =
+        
+        # print("-------------------Model config-----------------------------\n\n\n\n")
+        # print(config)
+        # print("\n\n\n\n--------------------------------end--------------------------")
 
         self.language_model = LLMFactory(config.llm_model_name_or_path)[0](config.text_config)
-        self.vision_tower = VisionTowerFactory(config.vision_model_name_or_path)(config.vision_config)
+        self.vision_tower = VisionTowerFactory(config.vision_model_name_or_path)(None)
         self.connector = ConnectorFactory(config.connector_type)(config)
 
         (Tokenizer, post_load) = LLMFactory(config.llm_model_name_or_path)[1]
@@ -73,6 +83,7 @@ class TinyLlavaForConditionalGeneration(TinyLlavaPreTrainedModel):
             use_fast = config.tokenizer_use_fast,
         ))
         self.post_init()
+        self.language_model.bfloat16()
 
     
     def get_input_embeddings(self):
@@ -116,9 +127,10 @@ class TinyLlavaForConditionalGeneration(TinyLlavaPreTrainedModel):
         use_cache: Optional[bool] = None,
         output_attentions: Optional[bool] = None,
         output_hidden_states: Optional[bool] = None,
-        images: Optional[torch.FloatTensor] = None,
-        image_sizes: Optional[List[List[int]]] = None,
         return_dict: Optional[bool] = None,
+        audios: Optional[torch.FloatTensor] = None,
+        # wav_lengths: Optional[torch.FloatTensor] = None,
+        lengths: Optional[torch.FloatTensor] = None,
     ) -> Union[Tuple, CausalLMOutputWithPast]:
         use_cache = use_cache if use_cache is not None else self.config.use_cache
         if inputs_embeds is None:
@@ -128,17 +140,21 @@ class TinyLlavaForConditionalGeneration(TinyLlavaPreTrainedModel):
                 attention_mask,
                 past_key_values,
                 inputs_embeds,
-                labels
+                labels,
+                
             ) = self.prepare_inputs_labels_for_multimodal(
                 input_ids,
                 position_ids,
                 attention_mask,
                 past_key_values,
                 labels,
-                images,
-                image_sizes
+                audios,
+                # wav_lengths,
+                lengths
             )
-        return self.language_model.forward(
+            #print('inp ids', input_ids, 'pos ids', position_ids, 'attn mask', attention_mask)
+            # print(inputs_embeds.shape)
+        language_model_output = self.language_model.forward(
             input_ids=input_ids,
             attention_mask=attention_mask,
             position_ids=position_ids,
@@ -150,13 +166,15 @@ class TinyLlavaForConditionalGeneration(TinyLlavaPreTrainedModel):
             output_hidden_states=output_hidden_states,
             return_dict=return_dict
         )
+        # print(f"\n\nlanguage_model_out\n\n{language_model_output}\n\n")
+        return language_model_output
     
     @torch.no_grad()
     def generate(
         self,
         inputs: Optional[torch.Tensor] = None,
-        images: Optional[torch.Tensor] = None,
-        image_sizes: Optional[torch.Tensor] = None,
+        audios: Optional[torch.Tensor] = None,
+        wav_lengths: Optional[torch.Tensor] = None,
         **kwargs,
     ) -> Union[GenerateOutput, torch.LongTensor]:
         position_ids = kwargs.pop("position_ids", None)
@@ -164,7 +182,7 @@ class TinyLlavaForConditionalGeneration(TinyLlavaPreTrainedModel):
         if "inputs_embeds" in kwargs:
             raise NotImplementedError("`inputs_embeds` is not supported")
 
-        if images is not None:
+        if audios is not None:
             (
                 inputs,
                 position_ids,
@@ -178,8 +196,8 @@ class TinyLlavaForConditionalGeneration(TinyLlavaPreTrainedModel):
                 attention_mask,
                 None,
                 None,
-                images,
-                image_sizes=image_sizes
+                audios,
+                wav_lengths,
             )
         else:
             inputs_embeds = self.language_model.get_input_embeddings()(inputs)
@@ -191,41 +209,54 @@ class TinyLlavaForConditionalGeneration(TinyLlavaPreTrainedModel):
             **kwargs
         )
         
-    def encode_images(self, images):
+    def encode_audio(self, audio, wav_lengths):
+        # TODO: remove gavnocode
+
         kwargs = {}
         kwargs['vision_feature_layer'] = self.config.vision_feature_layer
         kwargs['vision_feature_select_strategy'] = self.config.vision_feature_select_strategy
-        images = images.to(device=self.device, dtype=self.dtype)
-        image_features = self.vision_tower(images, **kwargs)
-        image_features = self.connector(image_features)
-        return image_features
+        kwargs["wav_lengths"] = wav_lengths 
+        
+        # audio = audio.to(device=self.device, dtype=self.dtype)
+        audio = audio.to(device=self.device)#.half()
+        # print("\n\nbefore vision tower\n\n")
+        audio_features = self.vision_tower(audio, **kwargs)#.float()
+        # print('audio features', audio_features)
+        # print("\n\nbefore connector\n\n")
+        audio_features = self.connector(audio_features.bfloat16())
+        # print("\n\nafter connecotr\n\n")
+        # print(audio_features.shape, audio_features.device)
+        # print(audio_features.shape, audio_features.device)
+        return audio_features.bfloat16()
     
     
     
     def prepare_inputs_for_generation(self, input_ids, past_key_values=None,
                                       inputs_embeds=None, **kwargs):
-        images = kwargs.pop("images", None)
-        image_sizes = kwargs.pop("image_sizes", None)
+        audios = kwargs.pop("audios", None)
+        wav_lengths = kwargs.pop("wav_lengths", None)
         inputs = self.language_model.prepare_inputs_for_generation(
             input_ids, past_key_values=past_key_values, inputs_embeds=inputs_embeds, **kwargs
         )
-        if images is not None:
-            inputs['images'] = images
-        if image_sizes is not None:
-            inputs['image_sizes'] = image_sizes
+        if audios is not None:
+            inputs['audios'] = audios
+        if wav_lengths is not None:
+            inputs['wav_lengths'] = wav_lengths
         return inputs
         
     def prepare_inputs_labels_for_multimodal(
         self, input_ids, position_ids, attention_mask, past_key_values, labels,
-        images, image_sizes=None
+        audios, wav_lengths
     ):
+        #########################################################################################################################################
         vision_tower = self.vision_tower
-        if vision_tower is None or images is None or input_ids.shape[1] == 1:
+        if vision_tower is None or audios is None or input_ids.shape[1] == 1:
+            raise RuntimeError("CONDITION WHERE VISION TOWER IS NONE")
             return input_ids, position_ids, attention_mask, past_key_values, None, labels
-
         
-        image_features = self.encode_images(images)
-
+        audio_features = self.encode_audio(audios, wav_lengths=wav_lengths)
+        # print('after connector', audio_features)
+        # print(audio_features.shape)
         # TODO: image start / end is not implemented here to support pretraining.
         if getattr(self.config, 'tune_mm_mlp_adapter', False):
             raise NotImplementedError
@@ -253,42 +284,47 @@ class TinyLlavaForConditionalGeneration(TinyLlavaPreTrainedModel):
 
         new_input_embeds = []
         new_labels = []
-        cur_image_idx = 0
+        cur_audio_idx = 0
         for batch_idx, cur_input_ids in enumerate(input_ids):
-            num_images = (cur_input_ids == IMAGE_TOKEN_INDEX).sum()
-            if num_images == 0:
-                cur_image_features = image_features[cur_image_idx]
+            num_audio = (cur_input_ids == IMAGE_TOKEN_INDEX).sum()
+            if num_audio == 0:
+                cur_audio_features = audio_features[cur_audio_idx]
                 cur_input_embeds_1 = self.language_model.get_input_embeddings()(cur_input_ids)
-                cur_input_embeds = torch.cat([cur_input_embeds_1, cur_image_features[0:0]], dim=0)
+                cur_input_embeds = torch.cat([cur_input_embeds_1, cur_audio_features[0:0]], dim=0)
                 new_input_embeds.append(cur_input_embeds)
                 new_labels.append(labels[batch_idx])
-                cur_image_idx += 1
+                cur_audio_idx += 1
                 continue
 
-            image_token_indices = [-1] + torch.where(cur_input_ids == IMAGE_TOKEN_INDEX)[0].tolist() + [cur_input_ids.shape[0]]
+            audio_token_indices = [-1] + torch.where(cur_input_ids == IMAGE_TOKEN_INDEX)[0].tolist() + [cur_input_ids.shape[0]]
             cur_input_ids_noim = []
             cur_labels = labels[batch_idx]
             cur_labels_noim = []
-            for i in range(len(image_token_indices) - 1):
-                cur_input_ids_noim.append(cur_input_ids[image_token_indices[i]+1:image_token_indices[i+1]])
-                cur_labels_noim.append(cur_labels[image_token_indices[i]+1:image_token_indices[i+1]])
+            for i in range(len(audio_token_indices) - 1):
+                cur_input_ids_noim.append(cur_input_ids[audio_token_indices[i]+1:audio_token_indices[i+1]])
+                cur_labels_noim.append(cur_labels[audio_token_indices[i]+1:audio_token_indices[i+1]])
             split_sizes = [x.shape[0] for x in cur_labels_noim]
             cur_input_embeds = self.language_model.get_input_embeddings()(torch.cat(cur_input_ids_noim))
             cur_input_embeds_no_im = torch.split(cur_input_embeds, split_sizes, dim=0)
             cur_new_input_embeds = []
             cur_new_labels = []
 
-            for i in range(num_images + 1):
+            for i in range(num_audio + 1):
                 cur_new_input_embeds.append(cur_input_embeds_no_im[i])
                 cur_new_labels.append(cur_labels_noim[i])
-                if i < num_images:
-                    cur_image_features = image_features[cur_image_idx]
-                    cur_image_idx += 1
-                    cur_new_input_embeds.append(cur_image_features)
-                    cur_new_labels.append(torch.full((cur_image_features.shape[0],), IGNORE_INDEX, device=cur_labels.device, dtype=cur_labels.dtype))
+                if i < num_audio:
+                    cur_audio_features = audio_features[cur_audio_idx]
+                    cur_audio_idx += 1
+                    cur_new_input_embeds.append(cur_audio_features)
+                    cur_new_labels.append(torch.full((cur_audio_features.shape[0],), IGNORE_INDEX, device=cur_labels.device, dtype=cur_labels.dtype))
 
             cur_new_input_embeds = [x.to(self.device) for x in cur_new_input_embeds]
-
+            # print(f"\n\ntext\n\n{cur_input_embeds.shape}\n\n")
+            cur_new_input_embeds[1] = cur_new_input_embeds[1].unsqueeze(0)########################################################################################################
+            # print(f"\n\n\n\n Before cat (prepare_inputs_label)")
+            # for i, t in enumerate(cur_new_input_embeds):
+            #     print(f"element ({i}): {t.shape}")
+            # print("\n\n\n\n")
             cur_new_input_embeds = torch.cat(cur_new_input_embeds)
             cur_new_labels = torch.cat(cur_new_labels)
 
@@ -302,7 +338,8 @@ class TinyLlavaForConditionalGeneration(TinyLlavaPreTrainedModel):
             new_labels = [x[:tokenizer_model_max_length] for x in new_labels]
 
         # Combine them
-        max_len = max(x.shape[0] for x in new_input_embeds)
+        # max_len = max(x.shape[0] for x in new_input_embeds)
+        max_len = 3000
         batch_size = len(new_input_embeds)
 
         new_input_embeds_padded = []
@@ -311,6 +348,7 @@ class TinyLlavaForConditionalGeneration(TinyLlavaPreTrainedModel):
         position_ids = torch.zeros((batch_size, max_len), dtype=position_ids.dtype, device=position_ids.device)
 
         for i, (cur_new_embed, cur_new_labels) in enumerate(zip(new_input_embeds, new_labels)):
+            # print(f"\n\n\n CUR LEN {cur_new_embed.shape}\n\n\n")
             cur_len = cur_new_embed.shape[0]
             if getattr(self.config, 'tokenizer_padding_side', 'right') == "left":
                 new_input_embeds_padded.append(torch.cat((
@@ -327,6 +365,10 @@ class TinyLlavaForConditionalGeneration(TinyLlavaPreTrainedModel):
                     torch.zeros((max_len - cur_len, cur_new_embed.shape[1]), dtype=cur_new_embed.dtype, device=cur_new_embed.device)
                 ), dim=0))
                 if cur_len > 0:
+                    # print(f"\n\n\n CUR NEW LABELS {cur_new_labels.shape}\n\n\n")
+                    # print(f"\n\n\n NEW LABEL PADDED {new_labels_padded.shape}\n\n\n")
+                    # print(f"\n\n\n NEW LABEL PADDED (slice) {new_labels_padded[i, :cur_len].shape}\n\n\n")
+                    cur_len = cur_new_labels.shape[0]
                     new_labels_padded[i, :cur_len] = cur_new_labels
                     attention_mask[i, :cur_len] = True
                     position_ids[i, :cur_len] = torch.arange(0, cur_len, dtype=position_ids.dtype, device=position_ids.device)
@@ -345,7 +387,6 @@ class TinyLlavaForConditionalGeneration(TinyLlavaPreTrainedModel):
 
         if _position_ids is None:
             position_ids = None
-
         return None, position_ids, attention_mask, past_key_values, new_input_embeds, new_labels
     
 

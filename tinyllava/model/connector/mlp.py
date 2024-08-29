@@ -27,7 +27,7 @@ class MLPConnector(Connector):
             modules.append(ACT_TYPE[act_type]())
             modules.append(nn.Linear(config.hidden_size, config.hidden_size))
             
-        self._connector = nn.Sequential(*modules)
+        self._connector = nn.Sequential(*modules).bfloat16()
 
    
         

@@ -27,6 +27,7 @@ class QFormer(nn.Module):
         for layer in self.bert.encoder.layer:
             layer.output = None
             layer.intermediate = None
+        print(f"\n\n\n\nLOOK AT THIS \n {self.bert}\n\n\n")
 
         self.query_tokens = nn.Parameter(
             torch.zeros(1, config.num_queries, bert_config.hidden_size)
@@ -72,6 +73,7 @@ class QFormerConnector(Connector):
 
         for p in self._connector.parameters():
             p.requires_grad = False
+        print("\n\nQ-FORMER LOADED\n\n")
  
 # =================================qformer bert related =================================
 import math

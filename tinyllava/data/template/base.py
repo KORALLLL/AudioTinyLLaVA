@@ -28,7 +28,7 @@ class Template:
         4. make target
         """
         question_list, answer_list = self.get_list_from_message(messages)
-        prompt = self.prompt(question_list, answer_list)
+        prompt = self.prompt(question_list, answer_list, mode)
         input_ids = self.tokenizer_image_token(prompt, tokenizer, return_tensors='pt')
         if mode == 'train':
             labels = self.make_labels(input_ids, prompt, tokenizer)
@@ -59,25 +59,25 @@ class Template:
             else:
                 answer_list.append(message['value'])
         
-        assert len(question_list) == len(answer_list) , \
-            f"qa is not match : length_q:{len(question_list)} vs length_a:{len(answer_list)}"
+        # assert len(question_list) == len(answer_list) , \
+        #     f"qa is not match : length_q:{len(question_list)} vs length_a:{len(answer_list)}"
         return question_list, answer_list
     
 
     def prompt(
         self,
-        question_list, answer_list
+        question_list, answer_list, mode='train'
     ):
         if type(question_list) is str:
             question_list = [question_list]
         if type(answer_list) is str:
             answer_list = [answer_list]    
-        msg = self._prompt(question_list, answer_list)
+        msg = self._prompt(question_list, answer_list, mode)
         return msg
 
     def _prompt(
         self,
-        question_list, answer_list,
+        question_list, answer_list, mode='train'
     ):
         msg = ""
         for i, (question, answer) in enumerate(zip(question_list, answer_list)):
@@ -87,7 +87,7 @@ class Template:
                 question = question.replace(DEFAULT_IMAGE_TOKEN, '').strip()
                 question = self.format_image_token.apply(content=question).strip()
             msg += self.format_user.apply(content=question)
-            msg += self.format_assistant.apply(content=answer)
+            if mode=='train': msg += self.format_assistant.apply(content=answer)
         return msg
     
     def make_labels(self, input_ids, prompt, tokenizer):
@@ -113,6 +113,7 @@ class Template:
                 print(input_ids)
                 time.sleep(5)
                 labels[:] = IGNORE_INDEX
+
         return labels
         
         
@@ -137,8 +138,7 @@ class Template:
     def tokenizer_image_token(cls, prompt, tokenizer, image_token_index=IMAGE_TOKEN_INDEX, return_tensors=None):
         def _insert_separator(X, sep):
             return [ele for sublist in zip(X, [sep]*len(X)) for ele in sublist][:-1]
-        prompt_chunks = [tokenizer(chunk).input_ids for chunk in prompt.split('<image>')]
-
+        prompt_chunks = [tokenizer(chunk).input_ids for chunk in prompt.split('<audio>')]
         input_ids = []
         offset = 0
         if len(prompt_chunks) > 0 and len(prompt_chunks[0]) > 0 and prompt_chunks[0][0] == tokenizer.bos_token_id:

@@ -19,8 +19,8 @@ MODEL_MAX_LENGTH="$9"
 VT_VARIANT="${VT_VERSION#*/}"
 LLM_VARIANT="${LLM_VERSION#*/}"
 
-deepspeed --include localhost:4,5,6,7 --master_port 29501 tinyllava/train/train.py \
-    --deepspeed ./scripts/zero3.json \
+# deepspeed --include localhost:0,1 --master_port 29501  
+python  tinyllava/train/train.py \
     --data_path  $DATA_PATH\
     --image_folder $IMAGE_PATH \
     --is_multimodal True \
@@ -31,23 +31,22 @@ deepspeed --include localhost:4,5,6,7 --master_port 29501 tinyllava/train/train.
     --connector_type $CN_VERSION \
     --mm_vision_select_layer -2 \
     --image_aspect_ratio square \
-    --attn_implementation flash_attention_2 \
-    --fp16 True \
+    --bf16 True \
     --training_recipe $TRAIN_RECIPE \
     --tune_type_llm frozen \
     --tune_type_vision_tower frozen \
     --tune_vision_tower_from_layer 0 \
     --tune_type_connector full \
-    --output_dir /mnt/data/sata/yinghu/checkpoints/llava_factory/tiny-llava-${LLM_VARIANT}-${VT_VARIANT}-${VERSION}-pretrain \
+    --output_dir /home/user27/outputs/checkpoints/llava_factory/tiny-llava-${LLM_VARIANT}-${VT_VARIANT}-${VERSION}-pretrain_bfloat \
     --num_train_epochs 1 \
-    --per_device_train_batch_size 32 \
+    --per_device_train_batch_size 4 \
     --per_device_eval_batch_size 4 \
-    --gradient_accumulation_steps 2 \
-    --evaluation_strategy "no" \
+    --gradient_accumulation_steps 8 \
+    --eval_strategy "no" \
     --save_strategy "steps" \
-    --save_steps 24000 \
+    --save_steps 25 \
     --save_total_limit 1 \
-    --learning_rate 1e-3 \
+    --learning_rate 1e-4 \
     --weight_decay 0. \
     --warmup_ratio 0.03 \
     --lr_scheduler_type "cosine" \
@@ -57,6 +56,8 @@ deepspeed --include localhost:4,5,6,7 --master_port 29501 tinyllava/train/train.
     --gradient_checkpointing True \
     --dataloader_num_workers 8 \
     --lazy_preprocess True \
-    --report_to tensorboard \
+    --report_to wandb \
     --tokenizer_use_fast False \
-    --run_name tiny-llava-${LLM_VARIANT}-${VT_VARIANT}-${VERSION}-pretrain
+    --run_name tiny-llava-${LLM_VARIANT}-${VT_VARIANT}-${VERSION}-pretrain \
+    # --deepspeed ./scripts/zero3.json \
+    # --attn_implementation flash_attention_2 \

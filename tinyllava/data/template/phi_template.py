@@ -14,7 +14,7 @@ system = "A chat between a curious user and an artificial intelligence assistant
 @register_template('phi')
 @dataclass
 class PhiTemplate(Template):
-    format_image_token: "Formatter" = StringFormatter(slot="<image>\n{{content}}")
+    format_image_token: "Formatter" = StringFormatter(slot="<audio>\n{{content}}")
     format_user: "Formatter" = StringFormatter(slot="USER" + ": " + "{{content}}" + " ")
     format_assistant: "Formatter" = StringFormatter(slot="ASSISTANT" + ": " + "{{content}}" + "<|endoftext|>")
     system: "Formatter" = EmptyFormatter(slot=system+" ")

@@ -4,12 +4,17 @@ import pathlib
 import tokenizers
 import transformers
 
+import sys
+
+sys.path.append('/home/user27/AudioTinyLLaVA')
 
 from tinyllava.train.tinyllava_trainer import LLaVATrainer
 from tinyllava.training_recipe import TrainingRecipeFactory
 from tinyllava.utils import *
 from tinyllava.model import *
 from tinyllava.data.dataset import make_supervised_data_module
+
+torch.autograd.set_detect_anomaly(True)
 
 IS_TOKENIZER_GREATER_THAN_0_14 = version.parse(tokenizers.__version__) >= version.parse('0.14')
 
@@ -46,7 +51,20 @@ def _load_connector_settings(model_arguments):
     return connector_args
 
 
+class PrintTrainingCallback(transformers.TrainerCallback):
+    def on_train_begin(self, args, state, control, **kwargs):
+        print("\n\n\n\n\n                        Training has started!\n\n\n\n\n")
+
+    def on_epoch_begin(self, args, state, control, **kwargs):
+        print(f"\n\n\n\n\n                        Starting epoch {state.epoch}!\n\n\n\n\n")
+    
+    def on_step_begin(self, args, state, control, **kwargs):
+        print(f"\n\n\n\n\n                        Starting step {state.global_step}!\n\n\n\n\n")
+
+
+
 def train():
+    print("\n\n\n\n\nHello from MTUCI https://t.me/KORALLLLLL\n\n\n\n\n")
     
     # load argument
     parser = transformers.HfArgumentParser(
@@ -66,6 +84,7 @@ def train():
     if training_arguments.pretrained_model_path is not None:
         model = training_recipe.load(model, model_args)
     else:
+        print("\n\n\n\n                 Handmade loadinn\n\n\n")
         model.load_llm(**model_args['llm'])
         model.load_vision_tower(**model_args['vision_tower'])
         model.load_connector(**model_args['connector'])
@@ -79,11 +98,24 @@ def train():
     data_module = make_supervised_data_module(tokenizer=tokenizer,
                                               data_args=data_arguments)
     log_trainable_params(model)  # not work well with zero3
-    trainer = LLaVATrainer(model=model, #does not require model.to(device), huggingface/deepspeed does it for you?
-                           tokenizer=tokenizer,
-                           args=training_arguments,
-                           **data_module)
-    
+    callbacks = [PrintTrainingCallback()]
+
+    # Pass callbacks in the 'args' parameter
+    trainer = LLaVATrainer(
+        model=model,
+        tokenizer=tokenizer,
+        args=training_arguments,
+        callbacks=callbacks,  # Pass the callbacks list here
+        **data_module
+    )
+    for p in model.vision_tower.parameters():
+        print('\n\VISION TOWER REQUIRES GRAD')
+        print(p.requires_grad)
+        break
+    for p in model.connector.parameters():
+        print('\n\CONNECTOR REQUIRES GRAD')
+        print(p.requires_grad)
+        break
     trainer.train()
     
     training_recipe.save(model, trainer)
