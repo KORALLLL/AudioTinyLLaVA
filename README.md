@@ -1,5 +1,6 @@
 ## 36. Создание мультимодальной модели, работающей с аудио-данными, на базе малых языковых моделей
-**[Отчет](https://github.com/KORALLLL/AudioTinyLLaVA/blob/master/Project_Report_airi.pdf)** **[Презентация](https://docs.google.com/presentation/d/1QiDBanClhnFRewI3MIcb6Ib0o_evhQhZOwvLPbqVnz8/edit?usp=sharing)**  
+**[Отчет](https://github.com/KORALLLL/AudioTinyLLaVA/blob/master/Project_Report_airi.pdf)**  
+**[Презентация](https://docs.google.com/presentation/d/1QiDBanClhnFRewI3MIcb6Ib0o_evhQhZOwvLPbqVnz8/edit?usp=sharing)**  
 
 
 <h2 align="center"> <a href="https://arxiv.org/abs/2402.14289">TinyLLaVA Factory</a><h5 align="center">
